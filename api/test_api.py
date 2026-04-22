@@ -13,7 +13,7 @@ from main import app
 @pytest.fixture
 def client():
     """Fixture to create TestClient - instantiated during test execution"""
-    return TestClient(app=app)
+    return TestClient(app)
 
 
 @pytest.fixture
