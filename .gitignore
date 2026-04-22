@@ -1,0 +1,22 @@
+# Environment variables
+.env
+.env.*
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# IDEs
+.vscode/
+.idea/
