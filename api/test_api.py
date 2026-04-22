@@ -9,7 +9,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from main import app
 
-client = TestClient(app)
+
+@pytest.fixture
+def client():
+    """Fixture to create TestClient - instantiated during test execution"""
+    return TestClient(app)
 
 
 @pytest.fixture
@@ -19,14 +23,14 @@ def mock_redis():
         yield mock
 
 
-def test_health(mock_redis):
+def test_health(client, mock_redis):
     """Test health endpoint returns 200 with status healthy"""
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
 
 
-def test_create_job(mock_redis):
+def test_create_job(client, mock_redis):
     """Test job creation returns job_id and calls Redis operations"""
     mock_redis.lpush.return_value = 1
     mock_redis.hset.return_value = 1
@@ -42,7 +46,7 @@ def test_create_job(mock_redis):
     mock_redis.hset.assert_called()
 
 
-def test_get_job_not_found(mock_redis):
+def test_get_job_not_found(client, mock_redis):
     """Test getting non-existent job returns 404"""
     mock_redis.hget.return_value = None
     
@@ -52,7 +56,7 @@ def test_get_job_not_found(mock_redis):
     assert "not found" in response.json()["error"].lower()
 
 
-def test_get_job_found(mock_redis):
+def test_get_job_found(client, mock_redis):
     """Test getting existing job returns status"""
     job_id = "test-job-123"
     mock_redis.hget.return_value = "completed"
@@ -64,7 +68,7 @@ def test_get_job_found(mock_redis):
     assert data["status"] == "completed"
 
 
-def test_redis_error_on_job_creation(mock_redis):
+def test_redis_error_on_job_creation(client, mock_redis):
     """Test Redis error during job creation returns 503"""
     import redis
     mock_redis.lpush.side_effect = redis.RedisError("Connection refused")
@@ -75,7 +79,7 @@ def test_redis_error_on_job_creation(mock_redis):
     assert "unavailable" in response.json()["error"].lower()
 
 
-def test_redis_error_on_get_job(mock_redis):
+def test_redis_error_on_get_job(client, mock_redis):
     """Test Redis error when retrieving job returns 503"""
     import redis
     mock_redis.hget.side_effect = redis.RedisError("Redis timeout")
