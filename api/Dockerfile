@@ -1,50 +1,37 @@
-# Multi-stage build for API service
-FROM python:3.11-slim as builder
+# Stage 1: builder
+FROM python:3.11-alpine AS builder
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache gcc musl-dev
 
-# Copy and install requirements in virtual environment
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
 
-# Final stage
-FROM python:3.11-slim
+# Stage 2: runtime
+FROM python:3.11-alpine
 
 WORKDIR /app
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser
+# ✅ correct user creation
+RUN adduser -D appuser
 
-# Copy Python dependencies from builder
+# Copy dependencies
 COPY --from=builder /root/.local /home/appuser/.local
 ENV PATH=/home/appuser/.local/bin:$PATH
 
-# Copy application code
 COPY main.py .
 
-# Set ownership to non-root user
 RUN chown -R appuser:appuser /app
 
-# Switch to non-root user
 USER appuser
 
-# Health check
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Expose port
 EXPOSE 8000
 
-# Run application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

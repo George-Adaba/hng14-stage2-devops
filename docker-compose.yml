@@ -1,4 +1,4 @@
-
+version: "3.9"
 
 services:
   redis:
@@ -30,8 +30,8 @@ services:
       redis:
         condition: service_healthy
     environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     ports:
       - "8000:8000"
     networks:
@@ -61,13 +61,13 @@ services:
       redis:
         condition: service_healthy
     environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     networks:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "sh", "-c", "python -c \"import os,redis; redis.Redis(host=os.getenv('REDIS_HOST','redis'), port=int(os.getenv('REDIS_PORT',6379)), socket_connect_timeout=2).ping()\""]
+      test: ["CMD", "sh", "-c", "python -c \"import os,redis; redis.Redis(host=os.getenv('REDIS_HOST'), port=int(os.getenv('REDIS_PORT')), socket_connect_timeout=2).ping()\""]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -90,7 +90,7 @@ services:
       api:
         condition: service_healthy
     environment:
-      API_URL: http://api:8000
+      API_URL: ${API_URL}
     ports:
       - "3000:3000"
     networks:
